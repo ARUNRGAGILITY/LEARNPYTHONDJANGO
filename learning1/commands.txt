@@ -1,0 +1,23 @@
+Install Python 3.x
+Install pip, pipenv 
+Install Git 
+Install VS Code or other IDE/TextEditor
+
+Configure Git username
+
+
+Commands
+d:
+mkdir DJANGO 
+cd DJANGO
+mkdir env_learn1
+cd env_learn1
+pipenv shell
+
+pip install django
+
+django-admin startproject project_learn .
+python manage.py makemigrations blog
+python manage.py migrate
+python manage.py runserver
+python manage.py createsuperuser

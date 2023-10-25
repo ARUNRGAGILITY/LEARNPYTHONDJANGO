@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Demo</title>
+  </head>
+  <body>
+    <h1>Demo</h1>
+  </body>
+</html>
+
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Demo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  </head>
+  <body>
+    <h1>Demo1</h1>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+  </body>
+</html>
+
+#### Blog base.html 
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}My Blog{% endblock %}</title>
+</head>
+<body>
+    <header>
+        <h1><a href="{% url 'post_list' %}">My Blog</a></h1>
+    </header>
+    <nav>
+        <ul>
+            <li><a href="{% url 'post_list' %}">Home</a></li>
+            <!-- Add more navigation links here if needed -->
+        </ul>
+    </nav>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    <footer>
+        &copy; {{ year }} My Blog
+    </footer>
+</body>
+</html>
+
+
+#### post_list.html 
+
+{% extends 'blog/base.html' %}
+
+{% block title %}Blog Posts{% endblock %}
+
+{% block content %}
+    <h2>Blog Posts</h2>
+    <ul>
+        {% for post in posts %}
+            <li><a href="{% url 'post_detail' post.id %}">{{ post.title }}</a></li>
+        {% endfor %}
+    </ul>
+{% endblock %}
+
+
+#### post_detail.html 
+
+{% extends 'blog/base.html' %}
+
+{% block title %}{{ post.title }}{% endblock %}
+
+{% block content %}
+    <article>
+        <h2>{{ post.title }}</h2>
+        <p>{{ post.pub_date|date }}</p>
+        <div>{{ post.content|safe }}</div>
+    </article>
+    <a href="{% url 'post_list' %}">Back to Blog Posts</a>
+{% endblock %}
+
+#### post_edit 
+
+{% extends 'blog/base.html' %}
+
+{% block title %}{{ post.title }}{% endblock %}
+
+{% block content %}
+    <article>
+        <h2>{{ post.title }}</h2>
+        <p>{{ post.pub_date|date }}</p>
+        <div>{{ post.content|safe }}</div>
+    </article>
+    
+    <p><a href="{% url 'post_edit' post.id %}">Edit</a> 
+    |
+     <a href="{% url 'post_delete' post.id %}">Delete</a></p>
+    
+    <a href="{% url 'post_list' %}">Back to Blog Posts</a>
+{% endblock %}
+
+
+{% extends 'blog/base.html' %}
+
+{% block title %}{{ post.title }}{% endblock %}
+
+{% block content %}
+    <article>
+        <h2>{{ post.title }}</h2>
+        <p>{{ post.pub_date|date }}</p>
+        <div>{{ post.content|safe }}</div>
+    </article>
+    
+    <!-- Add Edit and Delete links for authorized users -->
+    {% if user.is_authenticated %}
+        <p><a href="{% url 'post_edit' post.id %}">Edit</a> | <a href="{% url 'post_delete' post.id %}">Delete</a></p>
+    {% endif %}
+    
+    <a href="{% url 'post_list' %}">Back to Blog Posts</a>
+{% endblock %}
+
+
+
+#### post_delete.html 
+
+{% extends 'blog/base.html' %}
+
+{% block title %}Delete {{ post.title }}{% endblock %}
+
+{% block content %}
+    <h2>Confirm Deletion</h2>
+    <p>Are you sure you want to delete "{{ post.title }}"?</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit">Delete</button>
+    </form>
+    <a href="{% url 'post_detail' post.id %}">Cancel</a>
+{% endblock %}

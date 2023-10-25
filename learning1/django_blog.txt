@@ -1,0 +1,72 @@
+#### Database Model 
+
+from django.db import models
+
+class Post(models.Model):
+    title = models.CharField(max_length=200)
+    content = models.TextField()
+    pub_date = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+
+#### URL: urls.py 
+
+from django.urls import path
+from blog import views
+
+urlpatterns = [
+    path('blog/', views.post_list, name='post_list'),
+    path('blog/<int:post_id>/', views.post_detail, name='post_detail'),
+    path('blog/<int:post_id>/edit/', views.post_edit, name='post_edit'),
+    path('blog/<int:post_id>/delete/', views.post_delete, name='post_delete'),
+]
+
+
+
+#### views.py 
+from django.shortcuts import render, get_object_or_404, redirect
+from .models import Post
+from .forms import PostForm  # We'll create this form in the next step
+
+def post_list(request):
+    posts = Post.objects.order_by('-pub_date')
+    return render(request, 'blog/post_list.html', {'posts': posts})
+
+def post_detail(request, post_id):
+    post = get_object_or_404(Post, pk=post_id)
+    return render(request, 'blog/post_detail.html', {'post': post})
+
+def post_edit(request, post_id):
+    post = get_object_or_404(Post, pk=post_id)
+    
+    if request.method == "POST":
+        form = PostForm(request.POST, instance=post)
+        if form.is_valid():
+            post = form.save()
+            return redirect('post_detail', post_id=post.id)
+    else:
+        form = PostForm(instance=post)
+    
+    return render(request, 'blog/post_edit.html', {'form': form})
+
+
+def post_delete(request, post_id):
+    post = get_object_or_404(Post, pk=post_id)
+    
+    if request.method == "POST":
+        post.delete()
+        return redirect('post_list')
+    
+    return render(request, 'blog/post_delete.html', {'post': post})
+
+
+#### forms.py 
+
+from django import forms
+from .models import Post
+
+class PostForm(forms.ModelForm):
+    class Meta:
+        model = Post
+        fields = ['title', 'content']
