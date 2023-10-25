@@ -31,11 +31,11 @@ from .forms import PostForm  # We'll create this form in the next step
 
 def post_list(request):
     posts = Post.objects.order_by('-pub_date')
-    return render(request, 'blog/post_list.html', {'posts': posts})
+    return render(request, 'app_blog/post_list.html', {'posts': posts})
 
 def post_detail(request, post_id):
     post = get_object_or_404(Post, pk=post_id)
-    return render(request, 'blog/post_detail.html', {'post': post})
+    return render(request, 'app_blog/post_detail.html', {'post': post})
 
 def post_edit(request, post_id):
     post = get_object_or_404(Post, pk=post_id)
@@ -48,7 +48,7 @@ def post_edit(request, post_id):
     else:
         form = PostForm(instance=post)
     
-    return render(request, 'blog/post_edit.html', {'form': form})
+    return render(request, 'app_blog/post_edit.html', {'form': form})
 
 
 def post_delete(request, post_id):
@@ -58,7 +58,7 @@ def post_delete(request, post_id):
         post.delete()
         return redirect('post_list')
     
-    return render(request, 'blog/post_delete.html', {'post': post})
+    return render(request, 'app_blog/post_delete.html', {'post': post})
 
 
 #### forms.py 

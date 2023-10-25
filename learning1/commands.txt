@@ -17,6 +17,18 @@ pipenv shell
 pip install django
 
 django-admin startproject project_learn .
+python manage.py startapp app_blog 
+
+configure settings.py 
+INSTALLED_APPS 
+'DIRS': [ BASE_DIR / "templates"],
+configure urls.py 
+path('', views.home, name="home")
+create home function in views
+
+add/configure app_blog/urls.py 
+
+
 python manage.py makemigrations blog
 python manage.py migrate
 python manage.py runserver
