@@ -61,6 +61,26 @@ def post_delete(request, post_id):
     return render(request, 'app_blog/post_delete.html', {'post': post})
 
 
+#### == search ==
+from django.shortcuts import render
+from django.db.models import Q
+from .models import Post
+from .forms import SearchForm
+
+def search_view(request):
+    if request.method == 'POST':
+        form = SearchForm(request.POST)
+        if form.is_valid():
+            query = form.cleaned_data['query']
+            results = Post.objects.filter(Q(title__icontains=query) | Q(content__icontains=query))
+        else:
+            results = []
+    else:
+        form = SearchForm()
+        results = []
+
+    return render(request, 'app_blog/search_results.html', {'form': form, 'results': results})
+
 #### forms.py 
 
 from django import forms
@@ -70,3 +90,8 @@ class PostForm(forms.ModelForm):
     class Meta:
         model = Post
         fields = ['title', 'content']
+
+
+
+class SearchForm(forms.Form):
+    query = forms.CharField(label='Search', max_length=100)

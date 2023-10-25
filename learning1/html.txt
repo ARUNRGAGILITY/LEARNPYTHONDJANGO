@@ -141,3 +141,11 @@
     </form>
     <a href="{% url 'post_detail' post.id %}">Cancel</a>
 {% endblock %}
+
+
+#### search blog 
+
+<form method="get" action="{% url 'search_view' %}">
+    {{ form }}
+    <button type="submit">Search</button>
+</form>

@@ -1,0 +1,99 @@
+#### models.py
+from django.db import models
+
+class CodeSnippet(models.Model):
+    title = models.CharField(max_length=200)
+    code = models.TextField()
+    language = models.CharField(max_length=50)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+
+#### views.py 
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.db.models import Q
+from .models import CodeSnippet
+from .forms import CodeSnippetForm, CodeSearchForm
+
+def code_list(request):
+    snippets = CodeSnippet.objects.all()
+    return render(request, app_codelib/code_list.html', {'snippets': snippets})
+
+def code_detail(request, pk):
+    snippet = get_object_or_404(CodeSnippet, pk=pk)
+    return render(request, app_codelib/code_detail.html', {'snippet': snippet})
+
+def code_add(request):
+    if request.method == 'POST':
+        form = CodeSnippetForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('code_list')
+    else:
+        form = CodeSnippetForm()
+    return render(request, app_codelib/code_form.html', {'form': form})
+
+def code_edit(request, pk):
+    snippet = get_object_or_404(CodeSnippet, pk=pk)
+    if request.method == 'POST':
+        form = CodeSnippetForm(request.POST, instance=snippet)
+        if form.is_valid():
+            form.save()
+            return redirect('code_list')
+    else:
+        form = CodeSnippetForm(instance=snippet)
+    return render(request, app_codelib/code_form.html', {'form': form, 'snippet': snippet})
+
+def code_delete(request, pk):
+    snippet = get_object_or_404(CodeSnippet, pk=pk)
+    if request.method == 'POST':
+        snippet.delete()
+        return redirect('code_list')
+    return render(request, app_codelib/code_confirm_delete.html', {'snippet': snippet})
+
+def code_search(request):
+    if request.method == 'GET':
+        form = CodeSearchForm(request.GET)
+        if form.is_valid():
+            query = form.cleaned_data['query']
+            results = CodeSnippet.objects.filter(Q(title__icontains=query) | Q(code__icontains=query) | Q(language__icontains=query))
+        else:
+            results = []
+    else:
+        form = CodeSearchForm()
+        results = []
+
+    return render(request, app_codelib/code_search_results.html', {'form': form, 'results': results})
+
+
+#### forms.py 
+
+from django import forms
+from .models import CodeSnippet
+
+class CodeSnippetForm(forms.ModelForm):
+    class Meta:
+        model = CodeSnippet
+        fields = ('title', 'code', 'language')
+
+
+class CodeSearchForm(forms.Form):
+    query = forms.CharField(label='Search', max_length=100)
+
+
+#### urls.py 
+
+from django.urls import path
+from codelibraryapp import views
+
+urlpatterns = [
+    path('code/', views.code_list, name='code_list'),
+    path('code/add/', views.code_add, name='code_add'),
+    path('code/<int:pk>/', views.code_detail, name='code_detail'),
+    path('code/<int:pk>/edit/', views.code_edit, name='code_edit'),
+    path('code/<int:pk>/delete/', views.code_delete, name='code_delete'),
+]
+
+

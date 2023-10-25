@@ -1,0 +1,92 @@
+#### base.html 
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Code Library{% endblock %}</title>
+</head>
+<body>
+    <header>
+        <h1><a href="{% url 'code_list' %}">Code Library</a></h1>
+        <nav>
+            <ul>
+                <li><a href="{% url 'code_list' %}">Home</a></li>
+                <li><a href="{% url 'code_add' %}">Add Code</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    <footer>&copy; {{ year }} Code Library</footer>
+</body>
+</html>
+
+
+#### code_list.html 
+
+{% extends app_codelib/base.html' %}
+
+{% block title %}Code Library - All Snippets{% endblock %}
+
+{% block content %}
+    <h2>All Code Snippets</h2>
+    <ul>
+        {% for snippet in snippets %}
+            <li><a href="{% url 'code_detail' snippet.pk %}">{{ snippet.title }}</a></li>
+        {% empty %}
+            <p>No code snippets available.</p>
+        {% endfor %}
+    </ul>
+{% endblock %}
+
+
+#### code_detail.html 
+
+{% extends app_codelib/base.html' %}
+
+{% block title %}Code Library - {{ snippet.title }}{% endblock %}
+
+{% block content %}
+    <h2>{{ snippet.title }}</h2>
+    <pre>{{ snippet.code }}</pre>
+    <p>Language: {{ snippet.language }}</p>
+    <p>Created at: {{ snippet.created_at }}</p>
+    <p><a href="{% url 'code_edit' snippet.pk %}">Edit</a> | <a href="{% url 'code_delete' snippet.pk %}">Delete</a></p>
+    <a href="{% url 'code_list' %}">Back to Code Library</a>
+{% endblock %}
+
+
+#### code_form.html 
+
+{% extends app_codelib/base.html' %}
+
+{% block title %}{% if snippet %}Edit Code - {{ snippet.title }}{% else %}Add Code{% endif %}{% endblock %}
+
+{% block content %}
+    <h2>{% if snippet %}Edit Code{% else %}Add Code{% endif %}</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Save</button>
+    </form>
+    <a href="{% url 'code_list' %}">Cancel</a>
+{% endblock %}
+
+
+#### code_confirm_delete.html 
+
+{% extends app_codelib/base.html' %}
+
+{% block title %}Confirm Deletion - {{ snippet.title }}{% endblock %}
+
+{% block content %}
+    <h2>Confirm Deletion</h2>
+    <p>Are you sure you want to delete "{{ snippet.title }}"?</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit">Delete</button>
+    </form>
+    <a href="{% url 'code_detail' snippet.pk %}">Cancel</a>
+{% endblock %}
