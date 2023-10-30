@@ -1,0 +1,199 @@
+# models.py 
+
+# Imports for models
+from django.db import models
+from django.urls import reverse
+from mptt.models import MPTTModel, TreeForeignKey
+from django.conf import settings
+from django.utils.text import slugify
+from django.db.models import Sum, FloatField
+from decimal import Decimal
+from django.utils import timezone
+from django.contrib.auth.models import User
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
+from django.apps import apps
+from datetime import timedelta
+from django.contrib.auth.models import Permission
+from django.contrib.auth.models import User, AbstractUser, Group
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
+from PIL import Image
+from datetime import datetime
+from markdownx.models import MarkdownxField
+
+# import
+from ..all_model_imports import *
+
+  
+class Role(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+
+    active = models.BooleanField(default=True, null=True, blank=True)
+    deleted = models.BooleanField(default=True, null=True, blank=True)
+
+    start_date = models.DateField(null=True, blank=True, default=None)
+    end_date = models.DateField(null=True, blank=True, default=None)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return self.title
+
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    image = models.ImageField(default='default.jpg', upload_to='profile_pics')
+    bio = models.TextField(null=True, blank=True)
+
+    role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True)
+
+    active = models.BooleanField(default=True, null=True, blank=True)
+    deleted = models.BooleanField(default=True, null=True, blank=True)
+    def __str__(self):
+        return f"{self.user.username}'s Profile"
+  
+
+class RegCode(models.Model):
+    reg_code = models.CharField(max_length=250, default='a1A1B1B2C1C3N4', null=False, blank=False)
+    
+    def __str__(self):
+        return str(self.reg_code)
+    
+
+class CustomGroup(Group):    
+    active = models.BooleanField(default=True, null=True, blank=True)
+    deleted = models.BooleanField(default=True, null=True, blank=True)
+    author = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="custom_group_user")
+
+    def __str__(self):
+        return self.name
+
+List
+from ..all_model_imports import *
+from ..type.model_type import *
+from ..work.model_work import *
+# refer to permission model in permission/model_permission.py
+from ..permission.model_permission import *
+
+from ..._common.config.config import *
+app_base_ref = base_app_ref
+
+class List(MPTTModel):
+    parent = TreeForeignKey('self', null=True, blank=True, related_name='CHILDREN', on_delete=models.CASCADE)
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    title = models.CharField(max_length=250, default='', null=False, blank=False)
+    description = models.TextField(null=True, blank=True)
+
+    # Type 
+    type = TreeForeignKey(Type, null=True, blank=True, related_name='witype', on_delete=models.CASCADE)
+    # Administration
+    active = models.BooleanField(default=True, null=True, blank=True)
+    deleted = models.BooleanField(default=False, null=True, blank=True)
+    done = models.BooleanField(default=False)
+    position = models.PositiveIntegerField(default=1000)
+    created_at = models.DateTimeField(auto_now_add=True,null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True,null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    # Management
+    duration_in_hours = models.DecimalField(max_digits=6, decimal_places=2, default=0)
+    
+    class MPTTMeta:
+        order_insertion_by = ['position']
+    def __str__(self):
+        return self.title
+    def get_absolute_url(self):
+        return reverse('list_home')
+    def get_completion_stats(self):
+        total_count = self.get_descendants().filter(done=True, active=True).count() + self.get_descendants().filter(done=False, active=True).count()
+        completed_count = self.get_descendants().filter(done=True, active=True).count()
+        percent_complete = round(completed_count / total_count * 100, 2) if total_count > 0 else 0.0
+        #print(f"====> {completed_count}/{total_count} ===> {percent_complete}")
+        return {
+            'total_count': total_count,
+            'completed_count': completed_count,
+            'percent_complete': percent_complete,
+        }
+    def get_active_descendants(self):
+        return self.get_descendants().filter(active=True)
+    def children(self):
+        return List.objects.filter(parent=self.pk, active=True)
+    def serializable_object(self):
+        obj = {'title': self.title, 'children': []}
+        for child in self.children():
+            obj['children'].append(child.serializable_object())
+        return obj
+
+
+from ..all_model_imports import *
+# refer to permission model in permission/model_permission.py 
+class Type(MPTTModel):
+    parent = TreeForeignKey('self', null=True, blank=True, related_name='CHILDREN', on_delete=models.CASCADE)
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    title = models.CharField(max_length=250, default='', null=False, blank=False)
+    description = models.TextField(null=True, blank=True)
+
+    active = models.BooleanField(default=True, null=True, blank=True)
+    deleted = models.BooleanField(default=False, null=True, blank=True)
+
+    position = models.PositiveIntegerField(default=1000)
+    created_at = models.DateTimeField(auto_now_add=True,null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True,null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class MPTTMeta:
+       order_insertion_by = ['position']
+
+    def __str__(self):
+        return f"{self.title}"
+    def children(self):
+        return Type.objects.filter(parent=self.pk, active=True)
+    def get_active_descendants(self):
+        return self.get_descendants().filter(active=True)
+    def get_parent_id(self):
+        if self.parent:
+            return self.parent.id
+        return None
+
+from ..all_model_imports import *
+from ...models.user.model_user import *
+from ...models.list.model_list import *
+
+from ..._common.config.config import *
+app_base_ref = base_app_ref
+
+
+class ListPermission(models.Model):
+    list_node = TreeForeignKey(f"{app_base_ref}.List", on_delete=models.CASCADE)
+    users = models.ManyToManyField(User, blank=True)
+    groups = models.ManyToManyField(Group, blank=True)
+    # other fields like can_view, can_edit, etc.
+    inherit = models.BooleanField(default=False)
+    
+    users_can_view = models.BooleanField(default=False) # can set for generally viewable elements
+
+    can_view = models.BooleanField(default=False)
+    can_add = models.BooleanField(default=False)
+    can_change = models.BooleanField(default=False)
+    can_delete = models.BooleanField(default=False)
+
+    active = models.BooleanField(default=True, null=True, blank=True)
+    deleted = models.BooleanField(default=False, null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True,null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True,null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+
+    def save(self, *args, **kwargs):
+        if self.can_delete:
+            self.can_view = self.can_add = self.can_change = True
+        elif self.can_change:
+            self.can_view = self.can_add = True
+        elif self.can_add:
+            self.can_view = True
+        super(ListPermission, self).save(*args, **kwargs)
+
